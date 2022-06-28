@@ -1,22 +1,37 @@
 import React, { useState } from "react";
 import "./App.css";
-import { WordsMaker } from "./components/WordsMaker";
+import randomWords from "random-words";
+import {
+  Word,
+  makeWord,
+  setFirstWordPos,
+  getWordCells
+} from "./interfaces/Word";
+import {
+  PuzGridCell,
+  makePuzGridCell,
+  initPuzGrid
+} from "./interfaces/PuzGridCell";
 
 function App() {
-  const [bankSize, setBankSize] = useState(1);
+  const wordBankSize: number = 20;
+  const puzGridWidth: number = 20;
+  const puzGridHeight: number = 40;
+  const [displayedWordsQty, setDisplayedWordsQty] = useState<number>(1);
+  const [wordBank, setWordBank] = useState<Word[]>(
+    randomWords(wordBankSize).map(word => makeWord(word))
+  );
+  wordBank[0] = setFirstWordPos(wordBank[0]);
+  const firstWordCells: PuzGridCell[] = getWordCells(wordBank[0], 0);
+  const [puzGrid, setPuzGrid] = useState<PuzGridCell[]>(
+    initPuzGrid(puzGridHeight, puzGridWidth, firstWordCells)
+  );
+
   return (
     <div className="App">
-      <h1>Hi there.</h1>
-      <label>
-        Word Bank Size:{" "}
-        <input
-          type="number"
-          value={bankSize}
-          onChange={e => setBankSize(Number(e.target.value))}
-        />
-      </label>
-      <br />
-      <WordsMaker bankSize={bankSize} />
+      <button onClick={() => setDisplayedWordsQty(dw => dw + 1)}>
+        {displayedWordsQty}
+      </button>
     </div>
   );
 }

@@ -13,8 +13,8 @@ export const WordsMaker = (props: Props) => {
   return (
     <ul>
       {" "}
-      {getWords(props).map(value => (
-        <li>{value}</li>
+      {getWords(props).map(word => (
+        <li>{word}</li>
       ))}{" "}
     </ul>
   );
