@@ -1,9 +1,7 @@
 import React, { useState } from "react";
-import "./App.css";
+import {Props} from "../interfaces/Props";
 
-const Puzzle = (props: any) => {
-  const [wordBankSize, setWordBankSize] = useState(1);
-  return <table></table>;
+export const Puzzle = (props: Props) => {
+  return <table>
+  </table>;
 }
-
-export {Puzzle};
