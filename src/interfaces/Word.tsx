@@ -41,30 +41,18 @@ export const getWordWithAddedPos = (
   const dynamicDirection: number = (retWord.isAcross && 1) || 0;
   const staticDirection: number = (!retWord.isAcross && 1) || 0;
   const staticPos: number = givenLetterPos[staticDirection];
-  const offset: number = givenLetterPos[dynamicDirection];
-  if (letterIdxInWord > 0)
-    for (let i = letterIdxInWord - 1; i >= 0; i--)
-      pos.splice(
-        0,
-        0,
-        getLetterPosAdd(
-          dynamicDirection,
-          i + offset,
-          staticDirection,
-          staticPos
-        )
-      );
+  const offset: number = givenLetterPos[dynamicDirection] - letterIdxInWord;
   pos.push(givenLetterPos);
-  if (letterIdxInWord < retWord.word.length - 1)
-    for (let i = letterIdxInWord + 1; i < retWord.word.length; i++)
-      pos.push(
-        getLetterPosAdd(
-          dynamicDirection,
-          i + offset,
-          staticDirection,
-          staticPos
-        )
-      );
+  for (let i = letterIdxInWord - 1; i >= 0; i--)
+    pos.splice(
+      0,
+      0,
+      getLetterPosAdd(staticDirection, staticPos, dynamicDirection, i + offset)
+    );
+  for (let i = letterIdxInWord + 1; i < retWord.word.length; i++)
+    pos.push(
+      getLetterPosAdd(staticDirection, staticPos, dynamicDirection, i + offset)
+    );
   retWord.pos = pos;
   return retWord;
 };

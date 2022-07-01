@@ -8,10 +8,14 @@ function App() {
   const [props, setProps] = useState<Props>(initProps(15, 20, 20));
   return (
     <div className="App">
-      <button onClick={() => setProps(driver(props))}>
-        {props.dispWordsQty}
-      </button>
-      <Puzzle {...props} />
+      <div>
+        <button onClick={() => setProps(driver(props))}>
+          {props.dispWordsQty}
+        </button>
+      </div>
+      <div>
+        <Puzzle {...props} />
+      </div>
     </div>
   );
 }
