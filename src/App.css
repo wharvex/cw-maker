@@ -1,3 +1,18 @@
+table,
+td {
+  border: 1px solid black;
+}
+
+table {
+  margin: 20px;
+  display: inline-block;
+}
+
+td {
+  padding: 5px;
+  width: 25px;
+  text-align: center;
+}
 .App {
   font-size: 20px;
   text-align: center;

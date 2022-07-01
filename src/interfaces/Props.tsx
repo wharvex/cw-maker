@@ -1,4 +1,9 @@
-import { Word, makeWord, setFirstWordPos, getWordCellsOnRow } from "./Word";
+import {
+  Word,
+  makeWord,
+  getPuzModelWithAddedWord,
+  getFirstWordWithAddedPos
+} from "./Word";
 import { Xing, makeXing } from "./Xing";
 import { PuzModelCell, makePuzModelCell } from "./PuzModelCell";
 import randomWords from "random-words";
@@ -10,19 +15,21 @@ const initWords = (wordsQty: number): Word[] => {
 const initPuzModel = (
   puzHeight: number,
   puzWidth: number,
-  firstWordCells: PuzModelCell[]
+  firstWord: Word
 ): PuzModelCell[][] => {
   const puzModel: PuzModelCell[][] = [];
   for (let i = 0; i < puzHeight; i++) {
     const row: PuzModelCell[] = [];
     for (let j = 0; j < puzWidth; j++) {
-      row.push(makePuzModelCell(i, j, ""));
+      row.push(makePuzModelCell(i, j, "*", "", ""));
     }
     puzModel.push(row);
   }
-  for (let i = 0; i < firstWordCells.length; i++)
-    puzModel[0][i] = { ...firstWordCells[i] };
-  return puzModel;
+  firstWord.isAcross = true;
+  return getPuzModelWithAddedWord(
+    getFirstWordWithAddedPos(firstWord, puzHeight, puzWidth),
+    puzModel
+  );
 };
 
 const initXings = (words: Word[]): Xing[] => {
@@ -54,11 +61,10 @@ export interface Props {
 
 export const initProps = (
   wordsQty: number,
-  puzWidth: number,
-  puzHeight: number
+  puzHeight: number,
+  puzWidth: number
 ): Props => {
   const words: Word[] = initWords(wordsQty);
-  words[0] = setFirstWordPos(words[0]);
   return {
     wordsQty: wordsQty,
     puzWidth: puzWidth,
@@ -69,7 +75,7 @@ export const initProps = (
     puzModel: initPuzModel(
       puzHeight,
       puzWidth,
-      getWordCellsOnRow(words[0], 0) || [makePuzModelCell(0, 0, "")]
+      words[0]
     )
   };
 };
