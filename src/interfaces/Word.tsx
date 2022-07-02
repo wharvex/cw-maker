@@ -11,6 +11,10 @@ export interface Word {
   isAcross: boolean | null;
 }
 
+export const getWord = (words: Word[], wordStr: string): Word => {
+    return words.find(word => word.word === wordStr) as Word;
+  }
+
 export const makeWord = (word: string): Word => {
   return {
     word: word,
@@ -95,3 +99,7 @@ export const getPuzModelWithAddedWord = (
   }
   return newPuzModel;
 };
+
+export const getDisplayedWords = (words: Word[]) => {
+    return words.filter(word => getWordPosSafe(word) !== null)
+  }

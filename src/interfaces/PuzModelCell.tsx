@@ -1,4 +1,4 @@
-import { Word } from "./Word";
+import { getWordPos, Word } from "./Word";
 
 export interface PuzModelCell {
   row: number;
@@ -70,4 +70,40 @@ export const getUpdatedCell = (
   newCell.acrossWord = acrossWord;
   newCell.downWord = downWord;
   return newCell;
+};
+
+export const isPosOnModel = (
+  puzHeight: number,
+  puzWidth: number,
+  pos: [number, number][]
+): boolean => {
+  return pos
+    .map(
+      letter =>
+        letter[0] < puzHeight &&
+        letter[0] >= 0 &&
+        letter[1] < puzWidth &&
+        letter[1] >= 0
+    )
+    .every(letterPosStatus => letterPosStatus);
+};
+
+export const anySpacesTakenConflicts = (
+  word: Word,
+  puzModel: PuzModelCell[][]
+): boolean => {
+  return getWordPos(word).some(
+    (letterPos: [number, number], i: number) =>
+      getPuzModelCell(...letterPos, puzModel).contents !== word.word[i] &&
+      getPuzModelCell(...letterPos, puzModel).contents !== "*"
+  );
+};
+
+export const getValidNonConflicts = (
+  word: Word,
+  puzModel: PuzModelCell[][]
+): PuzModelCell[] => {
+  return getWordPos(word).map((letterPos: [number, number], i: number) => 
+      getPuzModelCell(...letterPos, puzModel).contents === word.word[i] &&
+
 };
