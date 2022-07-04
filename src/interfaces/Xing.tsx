@@ -1,25 +1,25 @@
-import { PuzModelCell } from "./PuzModelCell";
-import { getWordPos, Word, getWord } from "./Word";
+import { PuzModelCell, getPuzModelCell, getUpdatedCell } from "./PuzModelCell";
+import {
+  getWordPos,
+  Word,
+  getWord,
+  getWordPosFromLetterPos,
+  WordCandidate,
+  makeWordCandidate,
+  LetterPos
+} from "./Word";
 
-export interface Xing2 {
+export interface XingWord {
   word: string;
   letterIdxInWord: number;
   isAcross: boolean;
 }
 
-export interface Xing {
-  acrossWordWordsIdx: number;
-  acrossWordXingIdx: number;
-  downWordWordsIdx: number;
-  downWordXingIdx: number;
-  isUsed: boolean;
-}
-
-export const makeXing2 = (
+export const makeXingWord = (
   word: string,
   letterIdxInWord: number,
   isAcross: boolean
-): Xing2 => {
+): XingWord => {
   return {
     word: word,
     letterIdxInWord: letterIdxInWord,
@@ -27,48 +27,70 @@ export const makeXing2 = (
   };
 };
 
-export const makeXing = (
-  acrossWordWordsIdx: number,
-  acrossWordXingIdx: number,
-  downWordWordsIdx: number,
-  downWordXingIdx: number
-): Xing => {
-  return {
-    acrossWordWordsIdx: acrossWordWordsIdx,
-    acrossWordXingIdx: acrossWordXingIdx,
-    downWordWordsIdx: downWordWordsIdx,
-    downWordXingIdx: downWordXingIdx,
-    isUsed: false
-  };
-};
+export type Xing = [XingWord, XingWord];
 
-export const doXingAndWordMatch = (xing: Xing2, word: Word): boolean => {
+export const doXingAndWordMatch = (xing: XingWord, word: Word): boolean => {
   return word.word === xing.word && word.isAcross === xing.isAcross;
 };
 
 export const isXingWordDisplayed = (
   words: Word[],
-  xingWord: Xing2
+  xingWord: XingWord
 ): boolean => {
   return getWordPos(getWord(words, xingWord.word)) !== null;
 };
 
-export const getPossibleXings = (
-  displayedWords: Word[],
-  xings: [Xing2, Xing2][]
-): [Xing2, Xing2][] => {
-  return xings.filter(xing =>
-    displayedWords.some(
-      word =>
-        xing.some(xingWord => doXingAndWordMatch(xingWord, word)) &&
-        !xing.every(xingWord => isXingWordDisplayed(displayedWords, xingWord))
-    )
-  );
+export const getDisplayedXingWordSafe = (
+  words: Word[],
+  xing: Xing
+): XingWord | undefined => {
+  return xing.find(xingWord => isXingWordDisplayed(words, xingWord));
 };
 
-const isXingAllowed = (
-  crossing: Xing,
-  puzModel: Array<PuzModelCell>
-): boolean => {
-  return crossing.isUsed;
+export const getDisplayedXingWord = (words: Word[], xing: Xing): XingWord => {
+  return xing.find(xingWord =>
+    isXingWordDisplayed(words, xingWord)
+  ) as XingWord;
+};
+
+export const getNonDisplayedXingWord = (
+  words: Word[],
+  xing: Xing
+): XingWord => {
+  return xing.find(
+    xingWord => !isXingWordDisplayed(words, xingWord)
+  ) as XingWord;
+};
+
+export const getXingsFromDisplayedWords = (
+  displayedWords: Word[],
+  xings: Xing[]
+): Xing[] => {
+  return xings
+    .filter(xing =>
+      displayedWords.some(
+        word =>
+          xing.some(xingWord => doXingAndWordMatch(xingWord, word)) &&
+          !xing.every(xingWord => isXingWordDisplayed(displayedWords, xingWord))
+      )
+    )
+    .slice();
+};
+
+export const getInBoundsXingsFromDisplayedXings = (
+  displayedXings: Xing[],
+  words: Word[]
+): Xing[] => {
+  const ret: Xing[] = [];
+  let displayedXingWord: XingWord;
+  let nonDisplayedXingWord: XingWord;
+  let wordPosCandidate: LetterPos[];
+  let letterPosCandidate: LetterPos;
+  for (let xing of displayedXings) {
+    displayedXingWord = getDisplayedXingWord(words, xing);
+    nonDisplayedXingWord = getNonDisplayedXingWord(words, xing);
+    letterPosCandidate = getWordPos(getWord(words, nonDisplayedXingWord.word))[
+      nonDisplayedXingWord.letterIdxInWord
+    ];
+  }
 };

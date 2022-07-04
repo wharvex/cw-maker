@@ -1,19 +1,70 @@
 import {
-  PuzModelCell,
-  getPuzModelCell,
-  setPuzModelCell,
-  getUpdatedCell
-} from "./PuzModelCell";
+  Xing,
+  XingWord,
+  getDisplayedXingWord,
+  getNonDisplayedXingWord
+} from "./Xing";
+
+export type LetterPos = [number, number];
 
 export interface Word {
   word: string;
-  pos: [number, number][] | null;
+  pos: LetterPos[] | null;
   isAcross: boolean | null;
 }
 
-export const getWord = (words: Word[], wordStr: string): Word => {
-    return words.find(word => word.word === wordStr) as Word;
+export interface WordCandidate {
+  xingWordCandidate: XingWord;
+  posCandidate: LetterPos[];
+  displayedXingWord: XingWord;
+}
+
+export const makeWordCandidate = (
+  xingWordCandidate: XingWord,
+  posCandidate: LetterPos[],
+  displayedXingWord: XingWord
+) => {
+  return {
+    xingWordCandidate: xingWordCandidate,
+    posCandidate: posCandidate,
+    displayedXingWord: displayedXingWord
+  };
+};
+
+export const makeWordCandidatesFromXings = (
+  xings: Xing[],
+  words: Word[]
+): WordCandidate[] => {
+  const ret: WordCandidate[] = [];
+  let nonDisplayedXingWord: XingWord;
+  let displayedXingWord: XingWord;
+  let letterPosCandidate: LetterPos;
+  let getWordPosArgs: [string, number, boolean];
+  for (let xing of xings) {
+    nonDisplayedXingWord = getNonDisplayedXingWord(words, xing);
+    getWordPosArgs = Object.values(nonDisplayedXingWord) as [
+      string,
+      number,
+      boolean
+    ];
+    displayedXingWord = getDisplayedXingWord(words, xing);
+    letterPosCandidate = getWordPos(getWord(words, nonDisplayedXingWord.word))[
+      nonDisplayedXingWord.letterIdxInWord
+    ];
+    ret.push(
+      makeWordCandidate(
+        nonDisplayedXingWord,
+        getWordPosFromLetterPos(...getWordPosArgs, letterPosCandidate),
+        displayedXingWord
+      )
+    );
   }
+  return ret;
+};
+
+export const getWord = (words: Word[], wordStr: string): Word => {
+  return words.find(word => word.word === wordStr) as Word;
+};
 
 export const makeWord = (word: string): Word => {
   return {
@@ -23,27 +74,38 @@ export const makeWord = (word: string): Word => {
   };
 };
 
-const getLetterPosAdd = (
+export const getWordWithAddedIsAcross = (
+  word: Word,
+  isAcross: boolean
+): Word => {
+  return { ...word, isAcross: isAcross };
+};
+
+export const getWordWithAddedPos = (word: Word, pos: LetterPos[]): Word => {
+  return { ...word, pos: pos };
+};
+
+const getLetterPosGeneric = (
   staticIdx: number,
   staticVal: number,
   dynamicIdx: number,
   dynamicVal: number
-): [number, number] => {
-  const ret: [number, number] = [-1, -1];
+): LetterPos => {
+  const ret: LetterPos = [-1, -1];
   ret[staticIdx] = staticVal;
   ret[dynamicIdx] = dynamicVal;
   return ret;
 };
 
-export const getWordWithAddedPos = (
-  givenWord: Word,
+export const getWordPosFromLetterPos = (
+  givenWordStr: string,
   letterIdxInWord: number,
-  givenLetterPos: [number, number]
-): Word => {
-  const retWord: Word = { ...givenWord };
-  const pos: [number, number][] = [];
-  const dynamicDirection: number = (retWord.isAcross && 1) || 0;
-  const staticDirection: number = (!retWord.isAcross && 1) || 0;
+  givenWordIsAcross: boolean,
+  givenLetterPos: LetterPos
+): LetterPos[] => {
+  const pos: LetterPos[] = [];
+  const dynamicDirection: number = (givenWordIsAcross && 1) || 0;
+  const staticDirection: number = (!givenWordIsAcross && 1) || 0;
   const staticPos: number = givenLetterPos[staticDirection];
   const offset: number = givenLetterPos[dynamicDirection] - letterIdxInWord;
   pos.push(givenLetterPos);
@@ -51,14 +113,23 @@ export const getWordWithAddedPos = (
     pos.splice(
       0,
       0,
-      getLetterPosAdd(staticDirection, staticPos, dynamicDirection, i + offset)
+      getLetterPosGeneric(
+        staticDirection,
+        staticPos,
+        dynamicDirection,
+        i + offset
+      )
     );
-  for (let i = letterIdxInWord + 1; i < retWord.word.length; i++)
+  for (let i = letterIdxInWord + 1; i < givenWordStr.length; i++)
     pos.push(
-      getLetterPosAdd(staticDirection, staticPos, dynamicDirection, i + offset)
+      getLetterPosGeneric(
+        staticDirection,
+        staticPos,
+        dynamicDirection,
+        i + offset
+      )
     );
-  retWord.pos = pos;
-  return retWord;
+  return pos;
 };
 
 export const getFirstWordWithAddedPos = (
@@ -66,40 +137,25 @@ export const getFirstWordWithAddedPos = (
   puzHeight: number,
   puzWidth: number
 ): Word => {
-  return getWordWithAddedPos(givenWord, Math.floor(givenWord.word.length / 2), [
-    Math.floor(puzHeight / 2),
-    Math.floor(puzWidth / 2)
-  ]);
+  return getWordWithAddedPos(
+    givenWord,
+    getWordPosFromLetterPos(
+      givenWord.word,
+      Math.floor(givenWord.word.length / 2),
+      true,
+      [Math.floor(puzHeight / 2), Math.floor(puzWidth / 2)]
+    )
+  );
 };
 
-export const getWordPos = (word: Word): [number, number][] => {
-  return word.pos as [number, number][];
+export const getWordPos = (word: Word): LetterPos[] => {
+  return word.pos as LetterPos[];
 };
 
-export const getWordPosSafe = (word: Word): [number, number][] | null => {
+export const getWordPosSafe = (word: Word): LetterPos[] | null => {
   return word.pos;
 };
 
-export const getPuzModelWithAddedWord = (
-  word: Word,
-  puzModel: PuzModelCell[][]
-): PuzModelCell[][] => {
-  const newPuzModel: PuzModelCell[][] = puzModel.slice();
-  let acrossWord: string = (word.isAcross && word.word) || "";
-  let downWord: string = (!word.isAcross && word.word) || "";
-  let oldCell: PuzModelCell;
-  for (let i = 0; i < getWordPos(word).length; i++) {
-    oldCell = getPuzModelCell(...getWordPos(word)[i], newPuzModel);
-    acrossWord = oldCell.acrossWord || acrossWord;
-    downWord = oldCell.downWord || downWord;
-    setPuzModelCell(
-      newPuzModel,
-      getUpdatedCell(oldCell, word.word[i], acrossWord, downWord)
-    );
-  }
-  return newPuzModel;
-};
-
 export const getDisplayedWords = (words: Word[]) => {
-    return words.filter(word => getWordPosSafe(word) !== null)
-  }
+  return words.filter(word => getWordPosSafe(word) !== null);
+};

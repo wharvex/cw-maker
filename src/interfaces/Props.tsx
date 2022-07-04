@@ -1,11 +1,11 @@
 import {
   Word,
   makeWord,
-  getPuzModelWithAddedWord,
+  getWordWithAddedIsAcross,
   getFirstWordWithAddedPos
 } from "./Word";
-import { Xing, makeXing, Xing2, makeXing2 } from "./Xing";
-import { PuzModelCell, makePuzModelCell } from "./PuzModelCell";
+import { Xing, makeXingWord } from "./Xing";
+import { PuzModelCell, makePuzModelCell, getPuzModelWithAddedWord } from "./PuzModelCell";
 import randomWords from "random-words";
 
 const initWords = (wordsQty: number): Word[] => {
@@ -25,27 +25,27 @@ const initPuzModel = (
     }
     puzModel.push(row);
   }
-  firstWord.isAcross = true;
+  firstWord = getWordWithAddedIsAcross(firstWord, true);
   return getPuzModelWithAddedWord(
     getFirstWordWithAddedPos(firstWord, puzHeight, puzWidth),
     puzModel
   );
 };
 
-const initXings = (words: Word[]): [Xing2, Xing2][] => {
-  const xings: [Xing2, Xing2][] = [];
+const initXings = (words: Word[]): Xing[] => {
+  const xings: Xing[] = [];
   for (let h = 0; h < words.length - 1; h++) {
     for (let i = 0; i < words[h].word.length; i++) {
       for (let j = h + 1; j < words.length; j++) {
         for (let k = 0; k < words[j].word.length; k++) {
           if (words[h].word[i] === words[j].word[k]) {
             xings.push([
-              makeXing2(words[h].word, i, true, false),
-              makeXing2(words[j].word, k, false, false)
+              makeXingWord(words[h].word, i, true),
+              makeXingWord(words[j].word, k, false)
             ]);
             xings.push([
-              makeXing2(words[h].word, i, false, false),
-              makeXing2(words[j].word, k, true, false)
+              makeXingWord(words[h].word, i, false),
+              makeXingWord(words[j].word, k, true)
             ]);
           }
         }
