@@ -128,15 +128,17 @@ export const areWordCoordsOnModel = (
   );
 };
 
-export const areAnyTakenSpacesConflicts = (
-  word: Word,
-  wordCoordsCandidate: Coords[],
+export const anyTakenOnWordCellsBad = (
+  wordCandidate: WordCandidate,
   puzModel: PuzModelCell[][]
 ): boolean => {
-  return wordCoordsCandidate.some(
-    (letterCoords: Coords, i: number) =>
-      getPuzModelCell(letterCoords, puzModel).contents !== word.word[i] &&
-      getPuzModelCell(letterCoords, puzModel).contents !== "*"
+  // These are already taken cells that would be ON the candidate.
+  // "OnWord" cells (as opposed to surround cells) means ON the word.
+  return wordCandidate.coordsCandidate.some((letterCoords: Coords, i: number) =>
+    [wordCandidate.xingWordCandidate.word[i], "*"].every(
+      (goodContents: string) =>
+        getPuzModelCell(letterCoords, puzModel).contents !== goodContents
+    )
   );
 };
 
@@ -152,9 +154,10 @@ export const getCoordsGeneric = (
   return ret;
 };
 
-export const getTakenSpacesNonConflicts = (
-  // Pass the result of this func to surround check as exceptions.
-  // Make this func return the surruounding cells on the displayed word.
+export const getTakenSurroundCellsGood = (
+  // Pass the result of this func to anyTakenSurroundCellsBad.
+  // Make this func return the cells that SURROUND the candidate
+  // but that are ON a displayed word.
   wordCandidate: WordCandidate,
   puzModel: PuzModelCell[][]
 ): PuzModelCell[] => {
@@ -200,11 +203,68 @@ export const getTakenSpacesNonConflicts = (
         puzModel[0].length
       );
       [dynamicCoords1, dynamicCoords2].forEach(
-        coords => coords && ret.push(getPuzModelCell(coords, puzModel))
+        coords =>
+          coords &&
+          getPuzModelCell(coords, puzModel).contents !== "*" && // Only get taken cells.
+          ret.push(getPuzModelCell(coords, puzModel))
       );
     }
   }
   return ret;
+};
+
+export const anyTakenSurroundCellsBad = (
+  goodSurroundCells: PuzModelCell[],
+  puzModel: PuzModelCell[][],
+  wordCandidate: WordCandidate
+): boolean => {
+  const { xingWordCandidate, coordsCandidate } = wordCandidate;
+  const staticDirection: number = xingWordCandidate.isAcross ? 0 : 1;
+  const leftOrTopStatic: number = coordsCandidate[0][staticDirection] - 1;
+  const middleStatic: number = coordsCandidate[0][staticDirection];
+  const rightOrBottomStatic: number = coordsCandidate[0][staticDirection] + 1;
+  const dynamicDirection: number = staticDirection ? 0 : 1;
+  const beforeBeginning: Coords = getCoordsGeneric(
+    staticDirection,
+    middleStatic,
+    dynamicDirection,
+    coordsCandidate[0][dynamicDirection] - 1
+  );
+  const afterEnd: Coords = getCoordsGeneric(
+    staticDirection,
+    middleStatic,
+    dynamicDirection,
+    coordsCandidate[-1][dynamicDirection] + 1
+  );
+  const surroundCells: Array<PuzModelCell | undefined> = [
+    getPuzModelCellSafe(beforeBeginning, puzModel),
+    getPuzModelCellSafe(afterEnd, puzModel)
+  ];
+  let leftOrTopCoords: Coords;
+  let rightOrBottomCoords: Coords;
+  for (let i = 0; i < coordsCandidate.length; i++) {
+    leftOrTopCoords = getCoordsGeneric(
+      staticDirection,
+      leftOrTopStatic,
+      dynamicDirection,
+      coordsCandidate[i][dynamicDirection] - 1
+    );
+    rightOrBottomCoords = getCoordsGeneric(
+      staticDirection,
+      rightOrBottomStatic,
+      dynamicDirection,
+      coordsCandidate[i][dynamicDirection] + 1
+    );
+    [leftOrTopCoords, rightOrBottomCoords].forEach(
+      (coords: Coords) =>
+        !goodSurroundCells.some((goodCell: PuzModelCell) =>
+          doCoordsMatch(goodCell.coords, coords)
+        ) && surroundCells.push(getPuzModelCellSafe(coords, puzModel))
+    );
+  }
+  // surroundCells should now only contain undefineds (for off-grid coords)
+  // and cells that surround the candidate but are NOT in goodSurroundCells.
+  return surroundCells.some(cell => cell);
 };
 
 export const getPuzModelWithAddedWord = (
