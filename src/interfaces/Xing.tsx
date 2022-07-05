@@ -1,12 +1,16 @@
-import { PuzModelCell, getPuzModelCell, getUpdatedCell } from "./PuzModelCell";
 import {
-  getWordPos,
+  Coords,
+  PuzModelCell,
+  getPuzModelCell,
+  getUpdatedCell
+} from "./PuzModelCell";
+import {
+  getWordCoords,
   Word,
   getWord,
-  getWordPosFromLetterPos,
+  getWordCoordsFromLetterCoords,
   WordCandidate,
-  makeWordCandidate,
-  LetterPos
+  makeWordCandidate
 } from "./Word";
 
 export interface XingWord {
@@ -37,7 +41,7 @@ export const isXingWordDisplayed = (
   words: Word[],
   xingWord: XingWord
 ): boolean => {
-  return getWordPos(getWord(words, xingWord.word)) !== null;
+  return getWordCoords(getWord(words, xingWord.word)) !== null;
 };
 
 export const getDisplayedXingWordSafe = (
@@ -67,30 +71,12 @@ export const getXingsFromDisplayedWords = (
   xings: Xing[]
 ): Xing[] => {
   return xings
+    .slice()
     .filter(xing =>
       displayedWords.some(
         word =>
           xing.some(xingWord => doXingAndWordMatch(xingWord, word)) &&
           !xing.every(xingWord => isXingWordDisplayed(displayedWords, xingWord))
       )
-    )
-    .slice();
-};
-
-export const getInBoundsXingsFromDisplayedXings = (
-  displayedXings: Xing[],
-  words: Word[]
-): Xing[] => {
-  const ret: Xing[] = [];
-  let displayedXingWord: XingWord;
-  let nonDisplayedXingWord: XingWord;
-  let wordPosCandidate: LetterPos[];
-  let letterPosCandidate: LetterPos;
-  for (let xing of displayedXings) {
-    displayedXingWord = getDisplayedXingWord(words, xing);
-    nonDisplayedXingWord = getNonDisplayedXingWord(words, xing);
-    letterPosCandidate = getWordPos(getWord(words, nonDisplayedXingWord.word))[
-      nonDisplayedXingWord.letterIdxInWord
-    ];
-  }
+    );
 };

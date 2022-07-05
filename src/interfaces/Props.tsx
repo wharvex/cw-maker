@@ -2,14 +2,24 @@ import {
   Word,
   makeWord,
   getWordWithAddedIsAcross,
-  getFirstWordWithAddedPos
+  getUpdatedWord,
+  getUpdatedFirstWord
 } from "./Word";
 import { Xing, makeXingWord } from "./Xing";
-import { PuzModelCell, makePuzModelCell, getPuzModelWithAddedWord } from "./PuzModelCell";
+import {
+  PuzModelCell,
+  makePuzModelCell,
+  getPuzModelWithAddedWord
+} from "./PuzModelCell";
 import randomWords from "random-words";
 
 const initWords = (wordsQty: number): Word[] => {
-  return randomWords(wordsQty).map(word => makeWord(word));
+  const wordsSet: Set<string> = new Set(randomWords(wordsQty));
+  while (wordsSet.size < wordsQty)
+    wordsSet.add(...(randomWords(1) as [string]));
+  const wordsArr: Word[] = [];
+  wordsSet.forEach(word => wordsArr.push(makeWord(word)));
+  return wordsArr;
 };
 
 const initPuzModel = (
@@ -21,13 +31,12 @@ const initPuzModel = (
   for (let i = 0; i < puzHeight; i++) {
     const row: PuzModelCell[] = [];
     for (let j = 0; j < puzWidth; j++) {
-      row.push(makePuzModelCell(i, j, "*", "", ""));
+      row.push(makePuzModelCell([i, j], "*", "", ""));
     }
     puzModel.push(row);
   }
-  firstWord = getWordWithAddedIsAcross(firstWord, true);
   return getPuzModelWithAddedWord(
-    getFirstWordWithAddedPos(firstWord, puzHeight, puzWidth),
+    getUpdatedFirstWord(firstWord, puzHeight, puzWidth),
     puzModel
   );
 };

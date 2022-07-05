@@ -2,62 +2,67 @@ import {
   Xing,
   XingWord,
   getDisplayedXingWord,
-  getNonDisplayedXingWord
+  getNonDisplayedXingWord,
+  makeXingWord
 } from "./Xing";
-
-export type LetterPos = [number, number];
+import { Coords, getCoordsGeneric, areWordCoordsOnModel } from "./PuzModelCell";
 
 export interface Word {
   word: string;
-  pos: LetterPos[] | null;
+  coords: Coords[] | null;
   isAcross: boolean | null;
 }
 
 export interface WordCandidate {
   xingWordCandidate: XingWord;
-  posCandidate: LetterPos[];
+  coordsCandidate: Coords[];
   displayedXingWord: XingWord;
 }
 
+export type WordCandidateArgs = [XingWord, Coords[], XingWord];
+
 export const makeWordCandidate = (
   xingWordCandidate: XingWord,
-  posCandidate: LetterPos[],
+  coordsCandidate: Coords[],
   displayedXingWord: XingWord
 ) => {
   return {
     xingWordCandidate: xingWordCandidate,
-    posCandidate: posCandidate,
+    coordsCandidate: coordsCandidate,
     displayedXingWord: displayedXingWord
   };
 };
 
 export const makeWordCandidatesFromXings = (
   xings: Xing[],
-  words: Word[]
+  words: Word[],
+  puzHeight: number,
+  puzWidth: number
 ): WordCandidate[] => {
   const ret: WordCandidate[] = [];
   let nonDisplayedXingWord: XingWord;
   let displayedXingWord: XingWord;
-  let letterPosCandidate: LetterPos;
-  let getWordPosArgs: [string, number, boolean];
+  let letterCoordsCandidate: Coords;
+  let wordCoordsCandidate: Coords[];
   for (let xing of xings) {
     nonDisplayedXingWord = getNonDisplayedXingWord(words, xing);
-    getWordPosArgs = Object.values(nonDisplayedXingWord) as [
-      string,
-      number,
-      boolean
-    ];
     displayedXingWord = getDisplayedXingWord(words, xing);
-    letterPosCandidate = getWordPos(getWord(words, nonDisplayedXingWord.word))[
-      nonDisplayedXingWord.letterIdxInWord
-    ];
-    ret.push(
-      makeWordCandidate(
-        nonDisplayedXingWord,
-        getWordPosFromLetterPos(...getWordPosArgs, letterPosCandidate),
-        displayedXingWord
-      )
+    letterCoordsCandidate = getWordCoords(
+      getWord(words, nonDisplayedXingWord.word)
+    )[nonDisplayedXingWord.letterIdxInWord];
+    wordCoordsCandidate = getWordCoordsFromLetterCoords(
+      nonDisplayedXingWord,
+      letterCoordsCandidate
     );
+    // All candidates should be in bounds.
+    if (areWordCoordsOnModel(puzHeight, puzWidth, wordCoordsCandidate))
+      ret.push(
+        makeWordCandidate(
+          nonDisplayedXingWord,
+          wordCoordsCandidate,
+          displayedXingWord
+        )
+      );
   }
   return ret;
 };
@@ -69,8 +74,20 @@ export const getWord = (words: Word[], wordStr: string): Word => {
 export const makeWord = (word: string): Word => {
   return {
     word: word,
-    pos: null,
+    coords: null,
     isAcross: null
+  };
+};
+
+export const getUpdatedWord = (
+  oldWord: Word,
+  isAcross: boolean,
+  coords: Coords[]
+): Word => {
+  return {
+    ...oldWord,
+    isAcross: isAcross,
+    coords: coords
   };
 };
 
@@ -81,79 +98,55 @@ export const getWordWithAddedIsAcross = (
   return { ...word, isAcross: isAcross };
 };
 
-export const getWordWithAddedPos = (word: Word, pos: LetterPos[]): Word => {
-  return { ...word, pos: pos };
+export const getWordWithAddedPos = (word: Word, coords: Coords[]): Word => {
+  return { ...word, coords: coords };
 };
 
-const getLetterPosGeneric = (
-  staticIdx: number,
-  staticVal: number,
-  dynamicIdx: number,
-  dynamicVal: number
-): LetterPos => {
-  const ret: LetterPos = [-1, -1];
-  ret[staticIdx] = staticVal;
-  ret[dynamicIdx] = dynamicVal;
-  return ret;
-};
-
-export const getWordPosFromLetterPos = (
-  givenWordStr: string,
-  letterIdxInWord: number,
-  givenWordIsAcross: boolean,
-  givenLetterPos: LetterPos
-): LetterPos[] => {
-  const pos: LetterPos[] = [];
-  const dynamicDirection: number = (givenWordIsAcross && 1) || 0;
-  const staticDirection: number = (!givenWordIsAcross && 1) || 0;
-  const staticPos: number = givenLetterPos[staticDirection];
-  const offset: number = givenLetterPos[dynamicDirection] - letterIdxInWord;
-  pos.push(givenLetterPos);
-  for (let i = letterIdxInWord - 1; i >= 0; i--)
-    pos.splice(
+export const getWordCoordsFromLetterCoords = (
+  xingWord: XingWord,
+  givenCoords: Coords
+): Coords[] => {
+  const wordPos: Coords[] = [];
+  const dynamicDirection: number = xingWord.isAcross ? 1 : 0;
+  const staticDirection: number = !xingWord.isAcross ? 1 : 0;
+  const staticPos: number = givenCoords[staticDirection];
+  const offset: number =
+    givenCoords[dynamicDirection] - xingWord.letterIdxInWord;
+  wordPos.push(givenCoords);
+  for (let i = xingWord.letterIdxInWord - 1; i >= 0; i--)
+    wordPos.splice(
       0,
       0,
-      getLetterPosGeneric(
-        staticDirection,
-        staticPos,
-        dynamicDirection,
-        i + offset
-      )
+      getCoordsGeneric(staticDirection, staticPos, dynamicDirection, i + offset)
     );
-  for (let i = letterIdxInWord + 1; i < givenWordStr.length; i++)
-    pos.push(
-      getLetterPosGeneric(
-        staticDirection,
-        staticPos,
-        dynamicDirection,
-        i + offset
-      )
+  for (let i = xingWord.letterIdxInWord + 1; i < xingWord.word.length; i++)
+    wordPos.push(
+      getCoordsGeneric(staticDirection, staticPos, dynamicDirection, i + offset)
     );
-  return pos;
+  return wordPos;
 };
 
-export const getFirstWordWithAddedPos = (
+export const getUpdatedFirstWord = (
   givenWord: Word,
   puzHeight: number,
   puzWidth: number
 ): Word => {
-  return getWordWithAddedPos(
+  return getUpdatedWord(
     givenWord,
-    getWordPosFromLetterPos(
-      givenWord.word,
-      Math.floor(givenWord.word.length / 2),
-      true,
+    true,
+    getWordCoordsFromLetterCoords(
+      makeXingWord(givenWord.word, Math.floor(givenWord.word.length / 2), true),
       [Math.floor(puzHeight / 2), Math.floor(puzWidth / 2)]
     )
   );
 };
 
-export const getWordPos = (word: Word): LetterPos[] => {
-  return word.pos as LetterPos[];
+export const getWordCoords = (word: Word): Coords[] => {
+  return word.coords as Coords[];
 };
 
-export const getWordPosSafe = (word: Word): LetterPos[] | null => {
-  return word.pos;
+export const getWordPosSafe = (word: Word): Coords[] | null => {
+  return word.coords;
 };
 
 export const getDisplayedWords = (words: Word[]) => {

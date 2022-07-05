@@ -27,5 +27,9 @@ export const Puzzle: React.FC<Props> = (props: Props) => {
     return rows;
   };
 
-  return <table>{getRows(props)}</table>;
+  return (
+    <table>
+      <tbody>{getRows(props)}</tbody>
+    </table>
+  );
 };
