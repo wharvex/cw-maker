@@ -146,5 +146,6 @@ export const getWordCoordsSafe = (word: Word): Coords[] | null => {
 };
 
 export const getDisplayedWords = (words: Word[]) => {
-  return words.slice().filter(word => getWordCoordsSafe(word) !== null);
+  // :coords: field of non-displayed words is null.
+  return words.filter(word => getWordCoordsSafe(word)).slice();
 };
