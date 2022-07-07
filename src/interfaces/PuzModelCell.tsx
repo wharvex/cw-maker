@@ -29,33 +29,24 @@ export const doCoordsMatch = (coords1: Coords, coords2: Coords): boolean => {
 
 export const areCoordsSafe = (
   coords: Coords,
-  puzHeight: number,
-  puzWidth: number
+  puzModel: PuzModelCell[][]
 ): boolean => {
   return (
-    coords[0] < puzHeight &&
-    coords[1] < puzWidth &&
-    coords.every(coord => coord > 0)
+    coords[0] < puzModel.length &&
+    coords[1] < puzModel[0].length &&
+    coords.every(coord => coord >= 0)
   );
 };
 
-export const getCoordsSafe = (
-  coords: Coords,
-  puzHeight: number,
-  puzWidth: number
-): Coords | undefined => {
-  return areCoordsSafe(coords, puzHeight, puzWidth) ? [...coords] : undefined;
-};
-
-export const cellContainsDownWord = (cell: PuzModelCell): boolean => {
+export const hasDown = (cell: PuzModelCell): boolean => {
   return Boolean(cell.downWord);
 };
 
-export const cellContainsAcrossWord = (cell: PuzModelCell): boolean => {
+export const hasAcross = (cell: PuzModelCell): boolean => {
   return Boolean(cell.acrossWord);
 };
 
-export const cellContainsTwoWords = (cell: PuzModelCell): boolean => {
+export const has2Words = (cell: PuzModelCell): boolean => {
   return Boolean(cell.downWord) && Boolean(cell.acrossWord);
 };
 
@@ -63,7 +54,7 @@ export const getPuzModelCellSafe = (
   coords: Coords,
   puzModel: PuzModelCell[][]
 ): PuzModelCell | undefined => {
-  return getCoordsSafe(coords, puzModel.length, puzModel[0].length)
+  return areCoordsSafe(coords, puzModel)
     ? { ...puzModel[coords[0]][coords[1]] }
     : undefined;
 };
@@ -118,20 +109,11 @@ export const getUpdatedCell = (
   return newCell;
 };
 
-export const areWordCoordsOnModel = (
-  puzHeight: number,
-  puzWidth: number,
-  wordCoords: Coords[]
-): boolean => {
-  return wordCoords.every(letterCoords =>
-    areCoordsSafe(letterCoords, puzHeight, puzWidth)
-  );
-};
-
 export const anyTakenOnWordCellsBad = (
   wordCandidate: WordCandidate,
   puzModel: PuzModelCell[][]
 ): boolean => {
+  // Are any taken "OnWord" cells bad (conflicts)?
   // These are already taken cells that would be ON the candidate.
   // "OnWord" cells (as opposed to surround cells) means ON the word.
   return wordCandidate.coordsCandidate.some((letterCoords: Coords, i: number) =>
@@ -154,117 +136,99 @@ export const getCoordsGeneric = (
   return ret;
 };
 
-export const getTakenSurroundCellsGood = (
-  // Pass the result of this func to anyTakenSurroundCellsBad.
-  // Make this func return the cells that SURROUND the candidate
-  // but that are ON a displayed word.
+export const getSurroundCells = (
   wordCandidate: WordCandidate,
   puzModel: PuzModelCell[][]
-): PuzModelCell[] => {
-  const ret: PuzModelCell[] = [];
-  let cell: PuzModelCell;
-  const { coordsCandidate, xingWordCandidate } = wordCandidate;
-  let dynamicDirection: number;
-  let dynamicCoords1: Coords | undefined;
-  let dynamicCoords2: Coords | undefined;
-  let staticDirection: number;
-  let staticCoords: Coords;
-  for (let i = 0; i < coordsCandidate.length; i++) {
-    cell = getPuzModelCell(coordsCandidate[i], puzModel);
-    // Ensure letter matches and candidate is in opposite direction of word already at taken space.
-    if (
-      cell.contents === xingWordCandidate.word[i] &&
-      ((cellContainsDownWord(cell) && xingWordCandidate.isAcross) ||
-        (cellContainsAcrossWord(cell) && !xingWordCandidate.isAcross)) &&
-      !cellContainsTwoWords(cell)
-    ) {
-      // If the word whose letter is in cell is across, in order to find
-      // the surrounding cells, you need to change the column (index 1) &vv
-      dynamicDirection = cell.acrossWord ? 1 : 0;
-      staticDirection = dynamicDirection ? 0 : 1;
-      dynamicCoords1 = getCoordsSafe(
-        getCoordsGeneric(
-          staticDirection,
-          cell.coords[staticDirection],
-          dynamicDirection,
-          cell.coords[dynamicDirection] - 1
-        ),
-        puzModel.length,
-        puzModel[0].length
-      );
-      dynamicCoords2 = getCoordsSafe(
-        getCoordsGeneric(
-          staticDirection,
-          cell.coords[staticDirection],
-          dynamicDirection,
-          cell.coords[dynamicDirection] + 1
-        ),
-        puzModel.length,
-        puzModel[0].length
-      );
-      [dynamicCoords1, dynamicCoords2].forEach(
-        coords =>
-          coords &&
-          getPuzModelCell(coords, puzModel).contents !== "*" && // Only get taken cells.
-          ret.push(getPuzModelCell(coords, puzModel))
-      );
-    }
-  }
-  return ret;
-};
-
-export const anyTakenSurroundCellsBad = (
-  goodSurroundCells: PuzModelCell[],
-  puzModel: PuzModelCell[][],
-  wordCandidate: WordCandidate
-): boolean => {
+): Array<PuzModelCell | undefined> => {
   const { xingWordCandidate, coordsCandidate } = wordCandidate;
   const staticDirection: number = xingWordCandidate.isAcross ? 0 : 1;
   const leftOrTopStatic: number = coordsCandidate[0][staticDirection] - 1;
   const middleStatic: number = coordsCandidate[0][staticDirection];
   const rightOrBottomStatic: number = coordsCandidate[0][staticDirection] + 1;
   const dynamicDirection: number = staticDirection ? 0 : 1;
-  const beforeBeginning: Coords = getCoordsGeneric(
-    staticDirection,
-    middleStatic,
-    dynamicDirection,
-    coordsCandidate[0][dynamicDirection] - 1
+  const beforeBeginning: PuzModelCell | undefined = getPuzModelCellSafe(
+    getCoordsGeneric(
+      staticDirection,
+      middleStatic,
+      dynamicDirection,
+      coordsCandidate[0][dynamicDirection] - 1
+    ),
+    puzModel
   );
-  const afterEnd: Coords = getCoordsGeneric(
-    staticDirection,
-    middleStatic,
-    dynamicDirection,
-    coordsCandidate[-1][dynamicDirection] + 1
+  const afterEnd: PuzModelCell | undefined = getPuzModelCellSafe(
+    getCoordsGeneric(
+      staticDirection,
+      middleStatic,
+      dynamicDirection,
+      coordsCandidate[coordsCandidate.length - 1][dynamicDirection] + 1
+    ),
+    puzModel
   );
-  const surroundCells: Array<PuzModelCell | undefined> = [
-    getPuzModelCellSafe(beforeBeginning, puzModel),
-    getPuzModelCellSafe(afterEnd, puzModel)
-  ];
-  let leftOrTopCoords: Coords;
-  let rightOrBottomCoords: Coords;
+  const ret: Array<PuzModelCell | undefined> = [beforeBeginning, afterEnd];
+  let leftOrTop: PuzModelCell | undefined;
+  let rightOrBottom: PuzModelCell | undefined;
   for (let i = 0; i < coordsCandidate.length; i++) {
-    leftOrTopCoords = getCoordsGeneric(
-      staticDirection,
-      leftOrTopStatic,
-      dynamicDirection,
-      coordsCandidate[i][dynamicDirection] - 1
+    if (i === xingWordCandidate.letterIdxInNonCand) continue;
+    leftOrTop = getPuzModelCellSafe(
+      getCoordsGeneric(
+        staticDirection,
+        leftOrTopStatic,
+        dynamicDirection,
+        coordsCandidate[i][dynamicDirection] - 1
+      ),
+      puzModel
     );
-    rightOrBottomCoords = getCoordsGeneric(
-      staticDirection,
-      rightOrBottomStatic,
-      dynamicDirection,
-      coordsCandidate[i][dynamicDirection] + 1
+    rightOrBottom = getPuzModelCellSafe(
+      getCoordsGeneric(
+        staticDirection,
+        rightOrBottomStatic,
+        dynamicDirection,
+        coordsCandidate[i][dynamicDirection] + 1
+      ),
+      puzModel
     );
-    [leftOrTopCoords, rightOrBottomCoords].forEach(
-      (coords: Coords) =>
-        !goodSurroundCells.some((goodCell: PuzModelCell) =>
-          doCoordsMatch(goodCell.coords, coords)
-        ) && surroundCells.push(getPuzModelCellSafe(coords, puzModel))
-    );
+    ret.push(leftOrTop, rightOrBottom);
   }
-  // surroundCells should now only contain undefineds (for off-grid coords)
-  // and cells that surround the candidate but are NOT in goodSurroundCells.
-  return surroundCells.some(cell => cell);
+  return ret;
+};
+
+export const getWordCandCells = (
+  wordCand: WordCandidate,
+  puzModel: PuzModelCell[][]
+): PuzModelCell[] => {
+  return wordCand.coordsCandidate.map((letterCoords: Coords) =>
+    getPuzModelCell(letterCoords, puzModel)
+  );
+};
+
+export const anyCellTakenDiffLetter = (
+  wordCandCells: PuzModelCell[],
+  wordCand: WordCandidate
+): boolean => {
+  return wordCandCells.some(
+    (cell: PuzModelCell, i: number) =>
+      cell.contents !== wordCand.xingWordCandidate.word[i] &&
+      cell.contents !== "*"
+  );
+};
+
+export const getWordsOfCellsTakenSameLetter = (
+  wordCandCells: PuzModelCell[],
+  wordCand: WordCandidate
+): string[] => {
+  let letterMatch: boolean;
+  let oppDirection: boolean;
+  const ret: string[] = [];
+  const { xingWordCandidate } = wordCand;
+  for (let i = 0; i < wordCandCells.length; i++) {
+    letterMatch = wordCandCells[i].contents === xingWordCandidate.word[i];
+    oppDirection =
+      (hasAcross(wordCandCells[i]) && !xingWordCandidate.isAcross) ||
+      (hasDown(wordCandCells[i]) && xingWordCandidate.isAcross);
+    if (letterMatch && oppDirection && !has2Words(wordCandCells[i]))
+      ret.push(wordCandCells[i].acrossWord || wordCandCells[i].downWord);
+  }
+  return ret;
 };
 
 export const getPuzModelWithAddedWord = (

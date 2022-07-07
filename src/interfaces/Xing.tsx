@@ -1,16 +1,7 @@
 import {
-  Coords,
-  PuzModelCell,
-  getPuzModelCell,
-  getUpdatedCell
-} from "./PuzModelCell";
-import {
   getWordCoords,
   Word,
   getWord,
-  getWordCoordsFromLetterCoords,
-  WordCandidate,
-  makeWordCandidate
 } from "./Word";
 
 export interface XingWord {
@@ -31,14 +22,17 @@ export const makeXingWord = (
     word: word,
     letterIdxInWord: letterIdxInWord,
     isAcross: isAcross,
-    isCandidate: null
+    isCandidate: null,
   };
 };
 
 export const getXingWordWithUpdatedIsCandidate = (
-  xingWord: XingWord
+  xingWord: XingWord,
 ): XingWord => {
-  return { ...xingWord, isCandidate: true };
+  return {
+    ...xingWord,
+    isCandidate: true,
+  };
 };
 
 export const doXingWordAndWordMatch = (
@@ -75,15 +69,32 @@ export const getDisplayedXingWordSafe = (
 };
 
 export const getDisplayedXingWord = (words: Word[], xing: Xing): XingWord => {
-  return {...(xing.find(xingWord =>
-    isXingWordDisplayed(words, xingWord)
-  ) as XingWord)};
+  return {
+    ...(xing.find(xingWord => isXingWordDisplayed(words, xingWord)) as XingWord)
+  };
 };
 
-export const getNonDisplayedXingWord = (words: Word[], xing: Xing): XingWord => {
-  return {...(xing.find(xingWord =>
-    !isXingWordDisplayed(words, xingWord)
-  ) as XingWord)};
+export const getNonDisplayedXingWord = (
+  words: Word[],
+  xing: Xing
+): XingWord => {
+  return {
+    ...(xing.find(
+      xingWord => !isXingWordDisplayed(words, xingWord)
+    ) as XingWord)
+  };
+};
+
+export const getCandFromHalfDispXing = (xing: Xing): XingWord => {
+  return {
+    ...(xing.find((xingWord: XingWord) => xingWord.isCandidate) as XingWord)
+  };
+};
+
+export const getNonCandFromHalfDispXing = (xing: Xing): XingWord => {
+  return {
+    ...(xing.find((xingWord: XingWord) => !xingWord.isCandidate) as XingWord)
+  };
 };
 
 export const getNonDisplayedXingWordSafe = (
@@ -101,8 +112,8 @@ export const getHalfDisplayedXings = (
   xings: Xing[]
 ): Xing[] => {
   const ret: Xing[] = [];
-  let xingWordMatchIdx: number | undefined;
-  let otherXingWordIdx: number;
+  let xingWordMatchIdx: number | undefined; // Displayed word.
+  let otherXingWordIdx: number; // Potential candidate.
   let updatedXing: Xing;
   for (let word of displayedWords) {
     for (let xing of xings) {
@@ -113,8 +124,8 @@ export const getHalfDisplayedXings = (
       if (displayedWords.some(dw => dw.word === xing[otherXingWordIdx].word))
         continue;
       updatedXing = [...xing];
-      updatedXing[xingWordMatchIdx] = getXingWordWithUpdatedIsCandidate(
-        updatedXing[xingWordMatchIdx]
+      updatedXing[otherXingWordIdx] = getXingWordWithUpdatedIsCandidate(
+        updatedXing[otherXingWordIdx],
       );
       ret.push(updatedXing);
     }

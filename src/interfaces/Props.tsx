@@ -15,24 +15,30 @@ import randomWords from "random-words";
 
 const initWords = (
   wordsQty: number,
-  puzHeight: number,
-  puzWidth: number
-): Word[] => {
+  puzModel: PuzModelCell[][]
+): Word[] | undefined => {
   const wordsSet: Set<string> = new Set(randomWords(wordsQty));
   while (wordsSet.size < wordsQty)
     wordsSet.add(...(randomWords(1) as [string]));
   const wordsArr: Word[] = [];
   wordsSet.forEach(word => wordsArr.push(makeWord(word)));
-  return getWordsWithUpdatedWord(
-    getUpdatedFirstWord(wordsArr[0], puzHeight, puzWidth),
-    wordsArr
+  let updatedFirstWord: Word | undefined = getUpdatedFirstWord(
+    wordsArr[0],
+    puzModel
   );
+  if (!updatedFirstWord) {
+    for (let w of wordsArr) {
+      updatedFirstWord = getUpdatedFirstWord(w, puzModel);
+      if (updatedFirstWord) break;
+    }
+  }
+  if (!updatedFirstWord) return;
+  return getWordsWithUpdatedWord(updatedFirstWord, wordsArr);
 };
 
 const initPuzModel = (
   puzHeight: number,
   puzWidth: number,
-  firstWord: Word
 ): PuzModelCell[][] => {
   const puzModel: PuzModelCell[][] = [];
   for (let i = 0; i < puzHeight; i++) {
@@ -42,7 +48,7 @@ const initPuzModel = (
     }
     puzModel.push(row);
   }
-  return getPuzModelWithAddedWord(firstWord, puzModel);
+  return puzModel;
 };
 
 const initXings = (words: Word[]): Xing[] => {
@@ -73,8 +79,8 @@ export interface Props {
   puzWidth: number;
   puzHeight: number;
   dispWordsQty: number;
-  words: Word[];
-  xings: Xing[];
+  words: Word[] | undefined;
+  xings: Xing[] | undefined;
   puzModel: PuzModelCell[][];
 }
 
@@ -83,14 +89,15 @@ export const initProps = (
   puzHeight: number,
   puzWidth: number
 ): Props => {
-  const words: Word[] = initWords(wordsQty, puzHeight, puzWidth);
+  const puzModel: PuzModelCell[][] = initPuzModel(puzHeight, puzWidth);
+  const words: Word[] | undefined = initWords(wordsQty, puzModel);
   return {
     wordsQty: wordsQty,
     puzWidth: puzWidth,
     puzHeight: puzHeight,
     dispWordsQty: 1,
     words: words,
-    xings: initXings(words),
-    puzModel: initPuzModel(puzHeight, puzWidth, words[0])
+    xings: words ? initXings(words) : words,
+    puzModel: initPuzModel(puzHeight, puzWidth)
   };
 };
