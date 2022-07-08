@@ -7,7 +7,9 @@ export const Puzzle: React.FC<Props> = (props: Props) => {
     col: number,
     cellProps: Props
   ): ReactElement => {
-    return <td>{cellProps.puzModel[row][col].contents}</td>;
+    const contents: string = cellProps.puzModel[row][col].contents;
+    const cellClass: string = contents === "*" ? "App-blank-cell" : "";
+    return <td className={cellClass}>{contents}</td>;
   };
 
   const getRows = (

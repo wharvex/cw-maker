@@ -9,7 +9,9 @@ import {
   PuzModelCell,
   Coords,
   getCoordsGeneric,
-  areCoordsSafe
+  areCoordsSafe,
+  getSurroundCells,
+  getWordCandCells
 } from "./PuzModelCell";
 
 export interface Word {
@@ -20,20 +22,24 @@ export interface Word {
 
 export interface WordCandidate {
   xingWordCandidate: XingWord;
-  coordsCandidate: Coords[];
+  wordCells: PuzModelCell[];
+  surroundCells: (PuzModelCell | undefined)[];
 }
 
 export const makeWordCandidate = (
-  xingWordCandidate: XingWord,
-  coordsCandidate: Coords[]
-) => {
+  xingWordCand: XingWord,
+  coordsCand: Coords[],
+  puzModel: PuzModelCell[][]
+): WordCandidate => {
+  // Bounds check word cells with getWordCoordsFromLetterCoords before calling this func.
   return {
-    xingWordCandidate: xingWordCandidate,
-    coordsCandidate: coordsCandidate
+    xingWordCandidate: xingWordCand,
+    wordCells: getWordCandCells(coordsCand, puzModel),
+    surroundCells: getSurroundCells(xingWordCand, coordsCand, puzModel)
   };
 };
 
-export const makeWordCandidatesFromHalfDispXings = (
+export const makeWordCandsFromHalfDispXings = (
   halfDispXings: Xing[],
   words: Word[],
   puzModel: PuzModelCell[][]
@@ -58,7 +64,7 @@ export const makeWordCandidatesFromHalfDispXings = (
     );
     // Only in-bounds words are candidates.
     if (wordCoordsCand)
-      ret.push(makeWordCandidate(xingWordCand, wordCoordsCand));
+      ret.push(makeWordCandidate(xingWordCand, wordCoordsCand, puzModel));
   }
   return ret;
 };

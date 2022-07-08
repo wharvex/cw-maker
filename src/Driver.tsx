@@ -3,16 +3,16 @@ import {
   Word,
   WordCandidate,
   getDisplayedWords,
-  makeWordCandidatesFromHalfDispXings,
+  makeWordCandsFromHalfDispXings,
   getUpdatedWord,
   getWordsWithUpdatedWord
 } from "./interfaces/Word";
-import { Xing, makeXingWord, getHalfDisplayedXings } from "./interfaces/Xing";
+import { Xing, getHalfDisplayedXings } from "./interfaces/Xing";
 import {
   PuzModelCell,
-  anyTakenOnWordCellsBad,
-  getTakenSurroundCellsGood,
-  anyTakenSurroundCellsBad,
+  anyCellTakenDiffLetter,
+  getWordsOfCellsTakenSameLetter,
+  anyBadSurroundCells,
   getPuzModelWithAddedWord
 } from "./interfaces/PuzModelCell";
 
@@ -24,47 +24,64 @@ const getVettedCandidates = (
 ): WordCandidate[] => {
   const displayedWords: Word[] = getDisplayedWords(words);
   const halfDispXings: Xing[] = getHalfDisplayedXings(displayedWords, xings);
-  const wordCandidates: WordCandidate[] = makeWordCandidatesFromHalfDispXings(
+  const wordCandidates: WordCandidate[] = makeWordCandsFromHalfDispXings(
     halfDispXings,
     words,
-    puzModel.length,
-    puzModel[0].length
+    puzModel
   );
   const ret: WordCandidate[] = [];
-  let exceptions: PuzModelCell[];
+  let goodWords: string[];
   for (let cand of wordCandidates) {
-    if (anyTakenOnWordCellsBad(cand, puzModel)) continue;
-    exceptions = getTakenSurroundCellsGood(cand, puzModel);
-    if (anyTakenSurroundCellsBad(exceptions, puzModel, cand, inLookahead)) continue;
+    if (anyCellTakenDiffLetter(cand)) continue;
+    goodWords = getWordsOfCellsTakenSameLetter(cand);
+    if (!goodWords.length) continue;
+    if (anyBadSurroundCells(cand.surroundCells, goodWords)) continue;
     ret.push(cand);
   }
   return ret;
 };
 
-export const driver = (props: Props) => {
-  if (!props.words || !props.xings) return;
-  let topVettedCandScore: number = -1;
-  let topVettedCandIdx: number = -1;
-  let newWords: Word[] = [];
-  let newPuzModel: PuzModelCell[][] = [];
+export const driver = (props: Props): Props => {
   const vettedCandidates: WordCandidate[] = getVettedCandidates(
     props.puzModel,
     props.xings,
     props.words,
     false
   );
+  if (!vettedCandidates.length) return { ...props };
+  const vetIdx = Math.floor(Math.random() * vettedCandidates.length);
+  const vcWord: Word = getUpdatedWord(
+    vettedCandidates[vetIdx].xingWordCandidate.word,
+    vettedCandidates[vetIdx].xingWordCandidate.isAcross,
+    vettedCandidates[vetIdx].wordCells.map((cell: PuzModelCell) => cell.coords)
+  );
+  const vcWords = getWordsWithUpdatedWord(vcWord, props.words);
+  const vcPuzModel = getPuzModelWithAddedWord(vcWord, props.puzModel);
+  console.log(
+    "vcand:",
+    vettedCandidates[vetIdx],
+    "goodWords:",
+    getWordsOfCellsTakenSameLetter(vettedCandidates[vetIdx])
+  );
+  props.dispWordsQty++;
+  return {
+    ...props,
+    puzModel: vcPuzModel.length ? vcPuzModel : props.puzModel,
+    words: vcWords.length ? vcWords : props.words
+  };
+  let topVettedCandScore: number = -1;
+  let topVettedCandIdx: number = -1;
+  let newWords: Word[] = [];
+  let newPuzModel: PuzModelCell[][] = [];
   let vCandWord: Word;
   let newVCands: WordCandidate[];
-  if (!vettedCandidates.length) return { ...props };
-  props.dispWordsQty++;
   let newWordsTemp: Word[];
   let newPuzModelTemp: PuzModelCell[][];
-  console.log(vettedCandidates);
   for (let i = 0; i < vettedCandidates.length; i++) {
     vCandWord = getUpdatedWord(
       vettedCandidates[i].xingWordCandidate.word,
       vettedCandidates[i].xingWordCandidate.isAcross,
-      vettedCandidates[i].coordsCandidate
+      vettedCandidates[i].wordCells.map((cell: PuzModelCell) => cell.coords)
     );
     newWordsTemp = getWordsWithUpdatedWord(vCandWord, props.words);
     newPuzModelTemp = getPuzModelWithAddedWord(vCandWord, props.puzModel);

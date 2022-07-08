@@ -3,6 +3,10 @@ td {
   border: 1px solid black;
 }
 
+.App-blank-cell {
+  background-color: black;
+}
+
 table {
   margin: 20px;
   display: inline-block;

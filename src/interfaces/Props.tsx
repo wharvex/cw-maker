@@ -3,7 +3,8 @@ import {
   makeWord,
   getUpdatedWord,
   getUpdatedFirstWord,
-  getWordsWithUpdatedWord
+  getWordsWithUpdatedWord,
+  getDisplayedWords
 } from "./Word";
 import { Xing, makeXingWord } from "./Xing";
 import {
@@ -12,6 +13,7 @@ import {
   getPuzModelWithAddedWord
 } from "./PuzModelCell";
 import randomWords from "random-words";
+import { exit } from "process";
 
 const initWords = (
   wordsQty: number,
@@ -38,7 +40,7 @@ const initWords = (
 
 const initPuzModel = (
   puzHeight: number,
-  puzWidth: number,
+  puzWidth: number
 ): PuzModelCell[][] => {
   const puzModel: PuzModelCell[][] = [];
   for (let i = 0; i < puzHeight; i++) {
@@ -79,8 +81,8 @@ export interface Props {
   puzWidth: number;
   puzHeight: number;
   dispWordsQty: number;
-  words: Word[] | undefined;
-  xings: Xing[] | undefined;
+  words: Word[];
+  xings: Xing[];
   puzModel: PuzModelCell[][];
 }
 
@@ -91,13 +93,22 @@ export const initProps = (
 ): Props => {
   const puzModel: PuzModelCell[][] = initPuzModel(puzHeight, puzWidth);
   const words: Word[] | undefined = initWords(wordsQty, puzModel);
-  return {
-    wordsQty: wordsQty,
-    puzWidth: puzWidth,
-    puzHeight: puzHeight,
-    dispWordsQty: 1,
-    words: words,
-    xings: words ? initXings(words) : words,
-    puzModel: initPuzModel(puzHeight, puzWidth)
-  };
+  try {
+    if (!words) throw new Error("Bad words.");
+    else
+      return {
+        wordsQty: wordsQty,
+        puzWidth: puzWidth,
+        puzHeight: puzHeight,
+        dispWordsQty: 1,
+        words: words,
+        xings: initXings(words),
+        puzModel: getPuzModelWithAddedWord(
+          getDisplayedWords(words)[0],
+          puzModel
+        )
+      };
+  } catch (error) {
+    exit();
+  }
 };
