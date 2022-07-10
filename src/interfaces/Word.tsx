@@ -24,18 +24,21 @@ export interface WordCandidate {
   xingWordCandidate: XingWord;
   wordCells: PuzModelCell[];
   surroundCells: (PuzModelCell | undefined)[];
+  dispWord: string;
 }
 
 export const makeWordCandidate = (
   xingWordCand: XingWord,
   coordsCand: Coords[],
+  dispWord: string,
   puzModel: PuzModelCell[][]
 ): WordCandidate => {
   // Bounds check word cells with getWordCoordsFromLetterCoords before calling this func.
   return {
     xingWordCandidate: xingWordCand,
     wordCells: getWordCandCells(coordsCand, puzModel),
-    surroundCells: getSurroundCells(xingWordCand, coordsCand, puzModel)
+    surroundCells: getSurroundCells(xingWordCand, coordsCand, puzModel),
+    dispWord: dispWord
   };
 };
 
@@ -64,7 +67,14 @@ export const makeWordCandsFromHalfDispXings = (
     );
     // Only in-bounds words are candidates.
     if (wordCoordsCand)
-      ret.push(makeWordCandidate(xingWordCand, wordCoordsCand, puzModel));
+      ret.push(
+        makeWordCandidate(
+          xingWordCand,
+          wordCoordsCand,
+          xingWordNonCand.word,
+          puzModel
+        )
+      );
   }
   return ret;
 };

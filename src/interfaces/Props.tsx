@@ -84,15 +84,19 @@ export interface Props {
   words: Word[];
   xings: Xing[];
   puzModel: PuzModelCell[][];
+  origWords: Word[];
 }
 
 export const initProps = (
   wordsQty: number,
   puzHeight: number,
-  puzWidth: number
+  puzWidth: number,
+  origWordsParam: Word[] | undefined = undefined
 ): Props => {
   const puzModel: PuzModelCell[][] = initPuzModel(puzHeight, puzWidth);
-  const words: Word[] | undefined = initWords(wordsQty, puzModel);
+  const words: Word[] | undefined = origWordsParam
+    ? origWordsParam
+    : initWords(wordsQty, puzModel);
   try {
     if (!words) throw new Error("Bad words.");
     else
@@ -106,7 +110,8 @@ export const initProps = (
         puzModel: getPuzModelWithAddedWord(
           getDisplayedWords(words)[0],
           puzModel
-        )
+        ),
+        origWords: words
       };
   } catch (error) {
     exit();

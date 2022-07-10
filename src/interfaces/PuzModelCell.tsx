@@ -67,16 +67,6 @@ export const getPuzModelCell = (
   return { ...puzModel[coords[0]][coords[1]] };
 };
 
-export const getPuzModelCellFromArbitrary = (
-  coords: Coords,
-  arbCellArr: PuzModelCell[]
-): PuzModelCell | undefined => {
-  const found: PuzModelCell | undefined = arbCellArr.find(cell =>
-    doCoordsMatch(cell.coords, coords)
-  );
-  return found && { ...found };
-};
-
 export const getPuzModelWithUpdatedCells = (
   updatedCells: PuzModelCell[],
   puzModel: PuzModelCell[][]
@@ -172,8 +162,7 @@ export const getSurroundCells = (
       ),
       puzModel
     );
-    ret.push(leftOrTop);
-    ret.push(rightOrBottom);
+    ret.push(leftOrTop, rightOrBottom);
   }
   return ret;
 };
@@ -213,21 +202,21 @@ export const anyCellTakenDiffLetter = (wordCand: WordCandidate): boolean => {
   );
 };
 
-export const getWordsOfCellsTakenSameLetter = (
-  wordCand: WordCandidate
-): string[] => {
-  const { xingWordCandidate, wordCells } = wordCand;
+export const getGoodSurroundWords = (wordCand: WordCandidate): string[] => {
+  const { xingWordCandidate, wordCells, dispWord } = wordCand;
   let letterMatch: boolean;
   let oppDirection: boolean;
   const ret: string[] = [];
+  const retSet: Set<string> = new Set([dispWord]);
   for (let i = 0; i < wordCells.length; i++) {
     letterMatch = wordCells[i].contents === xingWordCandidate.word[i];
     oppDirection =
       (hasAcross(wordCells[i]) && !xingWordCandidate.isAcross) ||
       (hasDown(wordCells[i]) && xingWordCandidate.isAcross);
     if (letterMatch && oppDirection && !has2Words(wordCells[i]))
-      ret.push(wordCells[i].acrossWord || wordCells[i].downWord);
+      retSet.add(wordCells[i].acrossWord || wordCells[i].downWord);
   }
+  retSet.forEach((word: string) => ret.push(word));
   return ret;
 };
 

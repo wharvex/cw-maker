@@ -9,9 +9,19 @@ function App() {
   return (
     <div className="App">
       <div>
-        <button onClick={() => setProps(driver(props))}>
-          {props.dispWordsQty}
+        <button
+          className="App-button"
+          onClick={() => setProps(driver(props, false, false))}
+        >
+          Rand
         </button>
+        <button
+          className="App-button"
+          onClick={() => setProps(driver(props, true, false))}
+        >
+          Best
+        </button>
+        <span className="App-count">{props.dispWordsQty}</span>
       </div>
       <div>
         <Puzzle {...props} />

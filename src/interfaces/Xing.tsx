@@ -51,40 +51,6 @@ export const getXingWordMatchIdx = (
   else return;
 };
 
-export const isXingWordDisplayed = (
-  words: Word[],
-  xingWord: XingWord
-): boolean => {
-  return getWordCoords(getWord(words, xingWord.word)) !== null;
-};
-
-export const getDisplayedXingWordSafe = (
-  words: Word[],
-  xing: Xing
-): XingWord | undefined => {
-  const ret: XingWord | undefined = xing.find(xingWord =>
-    isXingWordDisplayed(words, xingWord)
-  );
-  return ret && { ...ret };
-};
-
-export const getDisplayedXingWord = (words: Word[], xing: Xing): XingWord => {
-  return {
-    ...(xing.find(xingWord => isXingWordDisplayed(words, xingWord)) as XingWord)
-  };
-};
-
-export const getNonDisplayedXingWord = (
-  words: Word[],
-  xing: Xing
-): XingWord => {
-  return {
-    ...(xing.find(
-      xingWord => !isXingWordDisplayed(words, xingWord)
-    ) as XingWord)
-  };
-};
-
 export const getCandFromHalfDispXing = (xing: Xing): XingWord => {
   return {
     ...(xing.find((xingWord: XingWord) => xingWord.isCandidate) as XingWord)
@@ -95,16 +61,6 @@ export const getNonCandFromHalfDispXing = (xing: Xing): XingWord => {
   return {
     ...(xing.find((xingWord: XingWord) => !xingWord.isCandidate) as XingWord)
   };
-};
-
-export const getNonDisplayedXingWordSafe = (
-  words: Word[],
-  xing: Xing
-): XingWord | undefined => {
-  const ret: XingWord | undefined = xing.find(
-    xingWord => !isXingWordDisplayed(words, xingWord)
-  );
-  return ret && { ...ret };
 };
 
 export const getHalfDisplayedXings = (
