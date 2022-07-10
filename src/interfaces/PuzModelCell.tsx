@@ -1,6 +1,7 @@
 import { getWordCoords, Word, WordCandidate } from "./Word";
 import { XingWord } from "./Xing";
 
+// Rows first, columns second
 export type Coords = [number, number];
 
 export interface PuzModelCell {

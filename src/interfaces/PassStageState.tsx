@@ -43,7 +43,7 @@ export const getRefPSS = (passes: Passes, stageRef: number): PassStageState => {
 };
 
 export const isIncrVCIdxValid = (passes: Passes, stageRef: number): boolean => {
-  let refPSS: PassStageState = getRefPSS(passes, stageRef);
+  const refPSS: PassStageState = getRefPSS(passes, stageRef);
   return refPSS.vcs.length > refPSS.vcIdx + 1;
 }
 

@@ -135,7 +135,7 @@ export const getUpdatedFirstWord = (
 ): Word | undefined => {
   const wordCoords: Coords[] | undefined = getWordCoordsFromLetterCoords(
     makeXingWord(givenWord.word, Math.floor(givenWord.word.length / 2), true),
-    [Math.floor(puzModel.length / 2), Math.floor(puzModel[0].length / 2)],
+    [Math.floor(puzModel.length * 0.75), Math.floor(puzModel[0].length / 2)],
     puzModel
   );
   return wordCoords

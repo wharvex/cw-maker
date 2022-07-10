@@ -5,7 +5,7 @@ import { driver } from "./Driver";
 import { Puzzle } from "./components/Puzzle";
 
 function App() {
-  const [props, setProps] = useState<Props>(initProps(30, 13, 30));
+  const [props, setProps] = useState<Props>(initProps(40, 14, 33));
   return (
     <div className="App">
       <div>
